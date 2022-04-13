@@ -36,14 +36,14 @@ pi.set_mode(botEndStop, pigpio.INPUT)       # enable pin (active low)
 linearDistancePerRev = 0.00508  # lead as specified by actuator ball screw datasheet (m)
 stepsPerRev = 800               # steps per revolution per driver
 maxPrecisionSpeed = 0.00635
-maxSpeed = 0.09525
+maxSpeed = 0.0925
 
 
 # Move arm in a specified direct at specified speed with precision stepping
 def stepMove(dist, dirs, speed = maxPrecisionSpeed):
     
-    pi.set_mode(puls, pigpio.OUTPUT)                        # Ensure pin is in correct mode and setup enable
     pi.write(en,0)
+    pi.set_mode(puls, pigpio.OUTPUT)                        # Ensure pin is in correct mode and setup enable
     
     if (dirs == 1):                                         # Set direction based on input
         pi.write(dir,1)
@@ -66,6 +66,7 @@ def stepMove(dist, dirs, speed = maxPrecisionSpeed):
 def pwmMove(dist, dirs, speed = maxSpeed):
     
     pi.write(en,0)
+    pi.set_mode(puls, pigpio.ALT5)  
     x = 0
     
     if (dirs == 1):                                     # Set direction based on input
@@ -76,17 +77,16 @@ def pwmMove(dist, dirs, speed = maxSpeed):
     freq = speed / linearDistancePerRev * stepsPerRev   # Calculate frequency for desired speed
     
     delay = (dist / speed) + (freq / 100 * 0.001)       # Calculate wait for certain distance
-    if (delay < 0):
-        delay = 0
     
     while(x <= freq):                                   # Ramp up to speed (maybe replace with log ramping)
-        pi.hardware_PWM(puls,x,50000)
+        pi.hardware_PWM(puls,x,500000)
         sleep(0.001)
-        x = x + 100
+        x = x + 250
     time.sleep(delay)                                   # Let pwm drive for certain amount of time
     
     pi.hardware_PWM(puls, 0, 0)                         # Turn off PWM
     pi.write(en,1)
+    sleep(0.050)
         
 # Reset actuator arm to bottom position
 def resetArm():
@@ -95,16 +95,24 @@ def resetArm():
     pi.write(dir,0)
     x = 0
     
-    while(x <= 15000):                                  # Ramp up to speed (maybe replace with log ramping)
-        pi.hardware_PWM(puls,x,50000)
+    while(x <= 10000):                                  # Ramp up to speed (maybe replace with log ramping)
+        pi.hardware_PWM(puls,x,500000)
         sleep(0.001)
-        x = x + 100
+        x = x + 250
+    while (pi.read(botEndStop) == 1):
+        print(pi.read(botEndStop))
+        sleep(0.000000001)
+        
+    pi.hardware_PWM(puls,0,0)
+    pi.write(en,1)
+        
+    
 
 # Callback function for handling top endstop trigger       
-def topEndStopHandle():
+def topEndStopHandle(gpio, level, tick):
 
     pi.set_mode(puls, pigpio.OUTPUT)
-    pi.write(dir,0)
+    pi.write(dir,1)
     pi.write(en,0)
     
     while (pi.read(topEndStop) == 1):                   # Move arm off endstop
@@ -117,7 +125,7 @@ def topEndStopHandle():
 
 
 # Callback function for handling bottom endstop trigger
-def botEndStopHandle():
+def botEndStopHandle(gpio, level, tick):
 
     pi.set_mode(puls, pigpio.OUTPUT)
     pi.write(dir,1)
@@ -129,8 +137,8 @@ def botEndStopHandle():
         sleep(0.0001)
         
 # Setup inturrupts for handling endstops
-topStop = pi.callback(5, pigpio.RISING_EDGE, topEndStopHandle)
-topStop = pi.callback(6, pigpio.RISING_EDGE, botEndStopHandle)
+# topStop = pi.callback(5, pigpio.RISING_EDGE, topEndStopHandle)
+# topStop = pi.callback(6, pigpio.RISING_EDGE, botEndStopHandle)
 
 if __name__ == "__main__":
     
@@ -139,8 +147,10 @@ if __name__ == "__main__":
     
     print('Precision move up 1cm')
     stepMove(0.01,1)
+    pwmMove(0.1,1)
     print('Precision move down 1cm')
     stepMove(0.01,0)
+    pwmMove(0.1,0)
     
     print('Speed move up 10cm')
     pwmMove(0.1,1)
