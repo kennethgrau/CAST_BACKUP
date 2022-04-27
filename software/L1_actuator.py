@@ -1,7 +1,7 @@
 # L1 program for CAST Bot actuator runnning SCUTTLE RasPi image
 # This code sends signals to ST-M5045 motor driver/NEMA 23 stepper motor on appropriate GPIO pins
 # See wiring guide doncument for pin mapping
-# Last update 04.12.2022 - Kenneth Grau
+# Last update 04.20.2022 - Kenneth Grau
 
 # Import external libraries
 
@@ -15,16 +15,16 @@ from time import sleep
 # Initialize pigpio
 pi = pigpio.pi()
 
-# label signal pins
-puls = 13
-dir = 19
-en = 26
+# Label signal pins                 USES BROADCOM NUMBERING
+puls = 13                           # Pulse output signal pin
+dir = 19                            # Direction output signal pin
+en = 26                             # Enable output signal ping
 
 # Label endstop pins
 topEndStop = 5
 botEndStop = 6
 
-# Setup mode for GPIO pins
+# Initialize mode for GPIO pins
 pi.set_mode(puls, pigpio.OUTPUT)            # pulse/signal generation
 pi.set_mode(dir, pigpio.OUTPUT)             # direction pin
 pi.set_mode(en, pigpio.OUTPUT)              # enable pin (active low)
@@ -33,129 +33,77 @@ pi.set_mode(botEndStop, pigpio.INPUT)       # enable pin (active low)
 
 
 # Set of parameters preset by user determined by actuator and driver
-linearDistancePerRev = 0.00508  # lead as specified by actuator ball screw datasheet (m)
-stepsPerRev = 800               # steps per revolution per driver
-maxPrecisionSpeed = 0.00635
-maxSpeed = 0.0925
+LDPR = 0.00508                  # Linear distance per revolution of lead screwt (m)
+SPR = 800                       # steps per revolution set by driver
+MPS = 0.00635                   # max linear speed (m/s) achievable precision stepping
+maxSpeed = 0.0925               # max linear speed (m/s) achievable with pwm driving
 
+def calculateStepDelay( speed ):
+    if speed > MPS:
+        x = 1/(MPS/LDPR*SPR)/2              # Calculate delay for max speed
+    else:
+        x = 1/(speed/LDPR*SPR)/2            # Calculate delay for desired speed
 
 # Move arm in a specified direct at specified speed with precision stepping
-def stepMove(dist, dirs, speed = maxPrecisionSpeed):
+def step( dirs, speed = MPS):
     
-    pi.write(en,0)
-    pi.set_mode(puls, pigpio.OUTPUT)                        # Ensure pin is in correct mode and setup enable
+    pi.write(en,0)                          # Enable 
+    pi.write(dir,dirs)                      # Set direction signal
+    pi.set_mode(puls, pigpio.OUTPUT)        # Ensure pin is in correct mode and setup enable
+    delay = calculateStepDelay(speed)
     
-    if (dirs == 1):                                         # Set direction based on input
-        pi.write(dir,1)
-    else:
-        pi.write(dir,0)
-    
-    steps = dist / linearDistancePerRev * stepsPerRev       # Calculate steps needed to travel desired distance
-    
-    delay = 1/(speed/linearDistancePerRev*stepsPerRev)/2    # Calculate delay for desired speed
-    
-    for x in range(int(steps)):
-        pi.write(puls,0)
-        sleep(delay)
-        pi.write(puls,1)
-        sleep(delay)
-        
+    pi.write(puls,0)                        # Create square pulse by turning
+    sleep(delay)                            # on and off GPIO with delay    
+    pi.write(puls,1)
+    sleep(delay)
+
     pi.write(en,1)
-            
+    
+# Calculate frequency for desired speed
+def calculatePWM( speed ):
+    if speed > maxSpeed:
+        x = maxSpeed/LDPR*SPR           # Calculate frequency for max speed
+    else:
+        x = speed/LDPR*SPR              # Calculate frequency for desired speed 
+    return(x)
+    
 # Move the arm in direction with specified speed (less precise but much faster)
-def pwmMove(dist, dirs, speed = maxSpeed):
+def sendPWM( dirs, speed ):
     
-    pi.write(en,0)
-    pi.set_mode(puls, pigpio.ALT5)  
-    x = 0
-    
-    if (dirs == 1):                                     # Set direction based on input
-        pi.write(dir,1)
+    pi.write(en,1)                      # Reset enable pin to prevent motor locking
+    sleep(0.05)                         # Give the motor a slight break
+    pi.write(en,0)                      # Enable stepper driver (active low)
+    pi.write(dir,dirs)                  # Set direction signal
+    x = 0                               # To be used in ramping
+    freq = round(calculatePWM(speed))   # Function to compute required frequency for speed
+    print(freq)
+    if (dirs == 1 and pi.read(topEndStop) == 0 and speed !=0):
+        print('Error: Top ensdtop triggered, cannot move up.')
+    elif (dirs == 0 and pi.read(botEndStop) == 0 and speed !=0):
+        print('Error: Bottom endstop triggered, cannot move down.')
     else:
-        pi.write(dir,0)
+        while(x <= freq):                   # Ramp toward target speed
+            pi.hardware_PWM(puls,x,500000)  # Set frequency to x
+            sleep(0.001)                    # Slight delay
+            x = x + 250                     # Increment x to target frequency for speed
     
-    freq = speed / linearDistancePerRev * stepsPerRev   # Calculate frequency for desired speed
-    
-    delay = (dist / speed) + (freq / 100 * 0.001)       # Calculate wait for certain distance
-    
-    while(x <= freq):                                   # Ramp up to speed (maybe replace with log ramping)
-        pi.hardware_PWM(puls,x,500000)
-        sleep(0.001)
-        x = x + 250
-    time.sleep(delay)                                   # Let pwm drive for certain amount of time
-    
-    pi.hardware_PWM(puls, 0, 0)                         # Turn off PWM
-    pi.write(en,1)
-    sleep(0.050)
-        
-# Reset actuator arm to bottom position
+# Reset arm to bottom position
 def resetArm():
-
-    pi.write(en,0)
-    pi.write(dir,0)
-    x = 0
     
-    while(x <= 10000):                                  # Ramp up to speed (maybe replace with log ramping)
-        pi.hardware_PWM(puls,x,500000)
-        sleep(0.001)
-        x = x + 250
-    while (pi.read(botEndStop) == 1):
-        print(pi.read(botEndStop))
-        sleep(0.000000001)
-        
-    pi.hardware_PWM(puls,0,0)
-    pi.write(en,1)
-        
-    
-
-# Callback function for handling top endstop trigger       
-def topEndStopHandle(gpio, level, tick):
-
-    pi.set_mode(puls, pigpio.OUTPUT)
-    pi.write(dir,1)
-    pi.write(en,0)
-    
-    while (pi.read(topEndStop) == 1):                   # Move arm off endstop
-        pi.write(puls,0)
-        sleep(0.0001)
-        pi.write(puls,1)
-        sleep(0.0001)
-        
-    pi.write(en,1)
-
-
-# Callback function for handling bottom endstop trigger
-def botEndStopHandle(gpio, level, tick):
-
-    pi.set_mode(puls, pigpio.OUTPUT)
-    pi.write(dir,1)
-    
-    while (pi.read(botEndStop) == 1):                   # Move arm off endstop
-        pi.write(puls,0)
-        sleep(0.0001)
-        pi.write(puls,1)
-        sleep(0.0001)
-        
-# Setup inturrupts for handling endstops
-# topStop = pi.callback(5, pigpio.RISING_EDGE, topEndStopHandle)
-# topStop = pi.callback(6, pigpio.RISING_EDGE, botEndStopHandle)
+    pi.write(en,0)                      # Enable driver
+    sendPWM(0,maxSpeed)                 # Move arm down at max speed
+    while(pi.read(botEndStop) == 1):    # Check for endstop
+        time.sleep(0.01)                # Wait for Botom endstop to be pressed
+        print('moving')
+    sendPWM( 0, 0)                      # Kill PWM signal once botEndStop pressed
 
 if __name__ == "__main__":
     
-    print('Resetting arm to bottom position...')
-    resetArm()
+    sendPWM(0,0.0)
+
+    sleep(2)
+    sendPWM(1,0)
     
-    print('Precision move up 1cm')
-    stepMove(0.01,1)
-    pwmMove(0.1,1)
-    print('Precision move down 1cm')
-    stepMove(0.01,0)
-    pwmMove(0.1,0)
-    
-    print('Speed move up 10cm')
-    pwmMove(0.1,1)
-    print('Speed move down 10cm')
-    pwmMove(0.1,0)
     
 
     

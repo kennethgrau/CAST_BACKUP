@@ -16,10 +16,17 @@
 # Import External programs
 import numpy as np
 import time
+import pigpio
+
+pi = pigpio.pi()
+pi.set_mode(20, pigpio.OUTPUT) 
+pi.set_mode(16, pigpio.OUTPUT) 
+
 
 # Import Internal Programs
 import L1_gamepad as gp
 import L1_log as log
+import L1_actuator as act
 import L2_inverse_kinematics as inv
 import L2_kinematics as kin
 import L2_speed_control as sc
@@ -43,8 +50,10 @@ def go():
         gp_data = gp.getGP()
         axis0 = gp_data[0] * -1
         axis1 = gp_data[1] * -1
-        rthumb = gp_data[3] # up/down axis of right thumb
-        horn = gp_data[4]   # "y" button
+        rthumb = gp_data[3]     # up/down axis of right thumb
+        up = gp_data[4]         # "y" button
+        down = gp_data[6]       # "a" button
+        
         
         
         # HORN FUNCTION
@@ -62,7 +71,8 @@ def go():
     
         myString = str(round(axis0*100,1)) + "," + str(round(axis1*100,1))
         log.stringTmpFile(myString,"uFile.txt")
-        print("Gamepad, xd: " ,axis1, " td: ", axis0) # print gamepad percents
+        # print("Gamepad, xd: " ,axis1, " td: ", axis0) # print gamepad percents
+        # print(gp_data[4],gp_data[6])
         
         # DRIVE IN OPEN LOOP
         chassisTargets = inv.map_speeds(np.array([axis1, axis0])) # generate xd, td
@@ -72,6 +82,39 @@ def go():
         # log.stringTmpFile(phiString,"pdTargets.txt")
         
         #DRIVING
-        sc.driveOpenLoop(pdTargets) #call driving function 
+        sc.driveOpenLoop(pdTargets) #call driving function
         #servo.move1(rthumb) # control the servo for laser
+        
+        pi.write(20,int(gp_data[4]))
+        pi.write(16,int(gp_data[6]))
+        pi.write(21,int(gp_data[5]))
+        pi.write(12,int(pi.read(6)))
+        pi.write(25,int(pi.read(5)))
+        
+        # print(pi.read(20),pi.read(16),pi.read(21))
+        print(pi.read(6))
+        
         time.sleep(0.05)
+
+def up(gpio, level, tick):
+    act.sendPWM(1,0.09)
+def down(gpio, level, tick):
+    act.sendPWM(0,0.09)
+def stop(gpio, level, tick):
+    act.sendPWM(0,0)
+def toggle(gpio, level, tick):
+    x = pi.read(4)
+    pi.write(4,not(x))
+    
+cb1 = pi.callback(20,0,up)
+cb2 = pi.callback(20,1,stop)
+cb3 = pi.callback(16,0,down)
+cb4 = pi.callback(16,1,stop)
+cb5 = pi.callback(21,0,toggle)
+cb6 = pi.callback(12,1,stop)
+cb7 = pi.callback(25,1,stop)
+
+    
+        
+if __name__ == "__main__":
+    go()
