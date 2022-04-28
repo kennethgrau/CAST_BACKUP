@@ -11,25 +11,30 @@ import adafruit_tca9548a
 
 # Create I2C bus as normal 
 i2c = busio.I2C(board.SCL, board.SDA)
-time.sleep(0.01)
+time.sleep(0.5)
 
 # Create TCA9548A object
 tca = adafruit_tca9548a.TCA9548A(i2c)
+time.sleep(0.5)
 
 # Setup each sensor
 ##green
-vlx1 = adafruit_vl53l0x.VL53L0X(tca[0])
-print('green good')
+#vlx1 = adafruit_vl53l0x.VL53L0X(tca[0])
 ## black
-vlx2 = adafruit_vl53l0x.VL53L0X(tca[1])
+vlx2 = adafruit_vl53l0x.VL53L0X(tca[7])
 print('black good')
 ##yellow
-vlx3 = adafruit_vl53l0x.VL53L0X(tca[2])
-print('yellow good')
+
+vlx3 = adafruit_vl53l0x.VL53L0X(tca[6])
+print('green good')
+# print('yellow good')
 
 while 1:
-    print(vlx1.range, vlx2.range, vlx3.range)
-    time.sleep(0.05)
+    #print(vlx1.range)
+    time.sleep(0.2)
+    print(vlx3.range)
+    time.sleep(0.2)
+    print(vlx2.range)
     
     
 

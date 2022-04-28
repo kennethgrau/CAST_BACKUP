@@ -7,7 +7,7 @@ import threading # only used for threading functions
 # IMPORT INTERNAL ITEMS
 import L3_gpControl as drive
 import L3_obstacleAvoid as obst
-import L3_LEDcontrol as led
+import L2_lidar as led
 
 # CREATE A THREAD FOR PRINTING TEST
 def loop_obst( ID ):
@@ -25,11 +25,6 @@ if __name__ == "__main__":
     print("starting the main fcn")
     threads = []  # create an object for threads
 
-    t = threading.Thread( target=loop_obst, args=(1,) ) # make 1st thread object
-    threads.append(t) # add this function to the thread object
-    t.start() # start executing
-    print("started thread1, for obstacle ovoidance")
-
     t2 = threading.Thread( target=loop_drive, args=(2,) ) # make 2nd thread object
     threads.append(t2) # add this function to the thread object
     t2.start() # start executing
@@ -39,6 +34,11 @@ if __name__ == "__main__":
     threads.append(t3) # add this function to the thread object
     t3.start() # start executing
     print("started thread2, for led control")
+    
+    t = threading.Thread( target=loop_obst, args=(1,) ) # make 1st thread object
+    threads.append(t) # add this function to the thread object
+    t.start() # start executing
+    print("started thread1, for obstacle ovoidance")
 
     # the join commands manipulate the way the program concludes multithreading.
     t.join()

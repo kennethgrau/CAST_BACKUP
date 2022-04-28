@@ -33,13 +33,13 @@ pi.set_mode(4, pigpio.OUTPUT)
 scan_data = [0] * 360
 
 def controlLED(scanData):
-    for x in range(185,195):
-        if (scanData[x] < 850 and scanData[x] != 0):
-            pi.write(4,1)
+    for x in range(180,182):
+        if (scanData[x] > 800 and scanData[x] != 0):
+            pi.write(4,0)
             break
         else:
-            pi.write(4,0)
-    # print(scanData)
+            pi.write(4,1)
+    print(scanData[180],scanData[181],scanData[182])
     time.sleep(0.01)
     
 

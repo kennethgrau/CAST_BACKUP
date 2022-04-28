@@ -22,32 +22,38 @@ pi.set_mode(botEndStop, pigpio.INPUT)       # enable pin (active low)
 
 # Create I2C bus as normal 
 i2c = busio.I2C(board.SCL, board.SDA)
-time.sleep(0.1)
+time.sleep(0.5)
 
 # Create TCA9548A object
 tca = mult.TCA9548A(i2c)
-time.sleep(0.1)
+time.sleep(0.5)
 
 # Initialize distance sesnor objects
-botToF = ToF.VL53L0X(tca[0])
-rightToF = ToF.VL53L0X(tca[1])
-leftToF = ToF.VL53L0X(tca[2])
+botToF = ToF.VL53L0X(tca[6])
+rightToF = ToF.VL53L0X(tca[7])
+# leftToF = ToF.VL53L0X(tca[2])
+time.sleep(0.5)
 
-arm = 650
+arm = 559
 
 def go():
     while (1):
-        print(botToF.range,rightToF.range,leftToF.range)
-        if ((rightToF.range < arm) or (leftToF.range < arm)):
+        if (rightToF.range < arm):
             # print('obstacle detected in path of arm')
             act.sendPWM(1,0.09)
-            while ((rightToF.range < arm) or (leftToF.range < arm)):
+            while (rightToF.range < arm):
                 print("moving arm up, movement disabled")
-                print(rightToF.range, botToF.range, leftToF.range)
-                time.sleep(0.01)
+                time.sleep(0.2)
             act.sendPWM(1,0)
         if botToF.range > arm:
             act.sendPWM(0,0.09)
+            while(botToF.range > arm and rightToF.range > arm):
+                print('moving down')
+                time.sleep(0.2)
+        else:
+            act.sendPWM(0,0)
+            time.sleep(0.2)
+            
         
         
 
