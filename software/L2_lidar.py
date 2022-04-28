@@ -27,19 +27,19 @@ lidar = raslidar.RPLidar(None, PORT_NAME, timeout=3)
 pi = pigpio.pi()
 
 # Setup LED control output
-pi.set_mode(4, pigpio.OUTPUT)              # 
+pi.set_mode(4, pigpio.OUTPUT)
 
 # Setup the data info for 360 degrees around the core of the Lidar
 scan_data = [0] * 360
 
 def controlLED(scanData):
     for x in range(185,195):
-        if (scanData[x] < 550 and scanData[x] != 0):
+        if (scanData[x] < 850 and scanData[x] != 0):
             pi.write(4,1)
             break
         else:
             pi.write(4,0)
-    print(scanData)
+    # print(scanData)
     time.sleep(0.01)
     
 
