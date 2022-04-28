@@ -28,7 +28,7 @@ if __name__ == "__main__":
     t = threading.Thread( target=loop_obst, args=(1,) ) # make 1st thread object
     threads.append(t) # add this function to the thread object
     t.start() # start executing
-    print("started thread1, for testing")
+    print("started thread1, for obstacle ovoidance")
 
     t2 = threading.Thread( target=loop_drive, args=(2,) ) # make 2nd thread object
     threads.append(t2) # add this function to the thread object
@@ -38,7 +38,7 @@ if __name__ == "__main__":
     t3 = threading.Thread( target=loop_led, args=(3,) ) # make 2nd thread object
     threads.append(t3) # add this function to the thread object
     t3.start() # start executing
-    print("started thread2, for driving")
+    print("started thread2, for led control")
 
     # the join commands manipulate the way the program concludes multithreading.
     t.join()

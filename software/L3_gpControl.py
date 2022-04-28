@@ -92,7 +92,7 @@ def go():
         pi.write(25,int(pi.read(5)))
         
         # print(pi.read(20),pi.read(16),pi.read(21))
-        print(pi.read(6))
+        # print(pi.read(6))
         
         time.sleep(0.05)
 
