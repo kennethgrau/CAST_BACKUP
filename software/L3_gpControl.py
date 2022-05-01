@@ -1,10 +1,6 @@
 # This program is adapted from gpDemo.py from 
 # https://github.com/scuttlerobot/SCUTTLE/blob/master/software/python/basics_pi/L3_gpDemo.py
 # as developed by Author: David Malaway
-# Adapted to include controls for peripherals for CAST robot 2022
-# includes control for moving actuator arm up and down and
-# toggling LED lights on and off
-# Updated 4/20/2022 - Kenneth Grau
 
 # A demonstration program: drive with gamepad.
 # This program grabs data from the onboard sensors and log data in files
@@ -14,13 +10,23 @@
 # v2020.11.29 DPM
 
 # Import External programs
+
+# Adapted to include controls for peripherals for CAST robot 2022
+# includes control for moving actuator arm up and down and
+# toggling LED lights on and off
+# Updated 4/30/2022 - Kenneth Grau
+
 import numpy as np
 import time
 import pigpio
 
+# Initialize pigpio object
 pi = pigpio.pi()
+
+# Setup for button GPIO connections
 pi.set_mode(20, pigpio.OUTPUT) 
-pi.set_mode(16, pigpio.OUTPUT) 
+pi.set_mode(16, pigpio.OUTPUT)
+pi.set_mode(21, pigpio.OUTPUT)
 
 
 # Import Internal Programs
@@ -32,7 +38,7 @@ import L2_kinematics as kin
 import L2_speed_control as sc
 
 # Run the main loop
-def go():
+def gpControl():
     while(1):
         # # ACCELEROMETER SECTION
         # accel = mpu.getAccel()                          # call the function from within L1_mpu.py
@@ -84,37 +90,49 @@ def go():
         #DRIVING
         sc.driveOpenLoop(pdTargets) #call driving function
         #servo.move1(rthumb) # control the servo for laser
-        
+
+        # Pin write to trigger callback functions for gamepad buttons
         pi.write(20,int(gp_data[4]))
         pi.write(16,int(gp_data[6]))
         pi.write(21,int(gp_data[5]))
+
+        # Pin write to trigger callback functions for enstops
+        # Issue: Callback functions wouldn't trigger directly on enstop pins
+        # Temp Fix: Writing to auxilary pin and trigger callback on that seemed to work
         pi.write(12,int(pi.read(6)))
         pi.write(25,int(pi.read(5)))
-        
-        # print(pi.read(20),pi.read(16),pi.read(21))
-        # print(pi.read(6))
-        
+
         time.sleep(0.05)
 
+# Callback function to move arm up on Y button press
 def up(gpio, level, tick):
     act.sendPWM(1,0.09)
+
+# Callback function to move arm down on A button press
 def down(gpio, level, tick):
     act.sendPWM(0,0.09)
+
+# Callback function to stop arm down on button release
 def stop(gpio, level, tick):
     act.sendPWM(0,0)
+
+# Callback function to toggle LED arrays on B button press
 def toggle(gpio, level, tick):
     x = pi.read(4)
     pi.write(4,not(x))
-    
-cb1 = pi.callback(20,0,up)
-cb2 = pi.callback(20,1,stop)
-cb3 = pi.callback(16,0,down)
-cb4 = pi.callback(16,1,stop)
-cb5 = pi.callback(21,0,toggle)
-cb6 = pi.callback(12,1,stop)
-cb7 = pi.callback(25,1,stop)
 
-    
-        
+# Create callbacks for above cases
+cb1 = pi.callback(20,0,up)              # Go up on rising edge of Y button
+cb2 = pi.callback(20,1,stop)            # Stop on falling edge of Y button
+cb3 = pi.callback(16,0,down)            # Go up on rising edge of A button
+cb4 = pi.callback(16,1,stop)            # Stop on falling edge of A button
+cb5 = pi.callback(21,0,toggle)          # Toggle LEDs on rising edge of B button
+cb6 = pi.callback(12,1,stop)            # Stop on falling edge of top enstop (they are active low)
+cb7 = pi.callback(25,1,stop)            # Stop on falling edge of top enstop (they are active low)
+
+# Wrap for multithreading
+def go():
+    gpControl()
+
 if __name__ == "__main__":
-    go()
+    gpControl()

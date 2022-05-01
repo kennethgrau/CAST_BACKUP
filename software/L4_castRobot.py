@@ -1,4 +1,7 @@
-# This will be a minimal example of demonstrating multithreading for SCUTTLE.
+# Multithreading code to drive all functions of CAST robot
+# Perofmance of overwriting PWM signals is not ideal but functions as intended
+# Would like to move LED control to L3 program but it is done in L2 because of the behavior of data reading for lidar
+# Author: Kenneth Grau | Updated: 4/30/2022
 
 # IMPORT EXTERNAL ITEMS
 import time
@@ -9,14 +12,15 @@ import L3_gpControl as drive
 import L3_obstacleAvoid as obst
 import L2_lidar as led
 
-# CREATE A THREAD FOR PRINTING TEST
+# Create a thread for running obstacle avoidance protocol
 def loop_obst( ID ):
     obst.go()  # command the full program to run
         
-# CREATE A THREAD FOR DRIVING
+# Create a thread for gamepad driving
 def loop_drive( ID ):
     drive.go() # command the full program to run
-    
+
+# Create a thread for controlling LED with lidar
 def loop_led( ID ):
     led.go() # command the full program to run
 
@@ -45,4 +49,3 @@ if __name__ == "__main__":
     t2.join()
     t3.join()
 
-# EXECUTE THE MAIN FUNCTION

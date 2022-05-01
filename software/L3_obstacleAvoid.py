@@ -5,11 +5,13 @@
 # L3_gpControl.py
 # Updated 4/20/2022 - Kenneth Grau
 
-# Import needed libraries
+# Import external libraries
 import time
 import board
 import busio
 import pigpio
+
+# Import internal libraries
 import L1_actuator as act
 import L1_distSensor as ToF
 import L1_multiplexor as mult
@@ -31,9 +33,9 @@ time.sleep(0.5)
 # Initialize distance sesnor objects
 botToF = ToF.VL53L0X(tca[6])
 rightToF = ToF.VL53L0X(tca[7])
-# leftToF = ToF.VL53L0X(tca[2])
 time.sleep(0.5)
 
+# Variable to quickly update arm length if hardware change occurs
 arm = 559
 
 def go():

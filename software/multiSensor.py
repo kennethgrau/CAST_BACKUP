@@ -4,11 +4,14 @@
 # Created to test functionality of ToF sensors with multiplexor before running multithreading code.
 # Author: Kenneth Grau | Updated: 4/30/2022
 
+# Import external libraries
 import time
 import board
 import busio
-import adafruit_vl53l0x
-import adafruit_tca9548a
+
+# Import internal libraries
+import L1_ToF as ToF
+import L1_multiplexor as mult
 
 # Create I2C bus as normal 
 i2c = busio.I2C(board.SCL, board.SDA)
@@ -17,7 +20,7 @@ time.sleep(0.5)                             # Allow I2C bus to settle
 print('Success!')
 
 # Create TCA9548A object
-tca = adafruit_tca9548a.TCA9548A(i2c)
+tca = mult.TCA9548A(i2c)
 print('Initializing multiplexor object...')
 time.sleep(0.2)
 print('Success!')
@@ -25,12 +28,12 @@ print('Success!')
 # Setup each sensor
 # ToF connected to black marked cable
 print('Initializing ToF sensor connected to Black marked cable...')
-vlx2 = adafruit_vl53l0x.VL53L0X(tca[7])
+vlx2 = ToF.VL53L0X(tca[7])
 print('Success!')
 
 # ToF Connected to green marked cable
 print('Initializing ToF sensor connected to Green marked cable...')
-vlx3 = adafruit_vl53l0x.VL53L0X(tca[6])
+vlx3 = ToF.VL53L0X(tca[6])
 print('Success!')
 
 if __name__ == "__main__":
