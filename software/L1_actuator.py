@@ -108,10 +108,10 @@ if __name__ == "__main__":
         print('Pause...')
         sleep(0.5)                      # Short pause
         print('Moving down...')
-        sendPWM(0, 0.05)
+        sendPWM(0, 0.05)                # Move down for 2 seconds
         sleep(2)
         sendPWM(0, 0)
-        print('Pause...')
+        print('Pause...')               # Short pause
         sleep(0.5)
     
     
