@@ -4,25 +4,19 @@
 # Last update 04.20.2022 - Kenneth Grau
 
 # Import external libraries
-
-# note pigpio uses BROADCOM numbers for labeling
 import pigpio
-
-# sleep is used for precision stepping as timing has a resolution of 1ms
 import time
 from time import sleep
 
 # Initialize pigpio
 pi = pigpio.pi()
 
-# Label signal pins                 USES BROADCOM NUMBERING
+# Label signal pins (USES BROADCOM NUMBERING)
 puls = 13                           # Pulse output signal pin
 dir = 19                            # Direction output signal pin
 en = 26                             # Enable output signal ping
-
-# Label endstop pins
-topEndStop = 5
-botEndStop = 6
+topEndStop = 5                      # Top endstop pin
+botEndStop = 6                      # Bot endstop pin
 
 # Initialize mode for GPIO pins
 pi.set_mode(puls, pigpio.OUTPUT)            # pulse/signal generation
@@ -38,6 +32,7 @@ SPR = 800                       # steps per revolution set by driver
 MPS = 0.00635                   # max linear speed (m/s) achievable precision stepping
 maxSpeed = 0.0925               # max linear speed (m/s) achievable with pwm driving
 
+# Function calculates delay for stepping mode
 def calculateStepDelay( speed ):
     if speed > MPS:
         x = 1/(MPS/LDPR*SPR)/2              # Calculate delay for max speed
@@ -47,19 +42,19 @@ def calculateStepDelay( speed ):
 # Move arm in a specified direct at specified speed with precision stepping
 def step( dirs, speed = MPS):
     
-    pi.write(en,0)                          # Enable 
+    pi.write(en,0)                          # Enable stepper driver
     pi.write(dir,dirs)                      # Set direction signal
     pi.set_mode(puls, pigpio.OUTPUT)        # Ensure pin is in correct mode and setup enable
-    delay = calculateStepDelay(speed)
+    delay = calculateStepDelay(speed)       # Calculate delay between steps for desired speed (resolution of sleep is only 1ms)
     
     pi.write(puls,0)                        # Create square pulse by turning
-    sleep(delay)                            # on and off GPIO with delay    
+    sleep(delay)                            # on and off GPIO with delay
     pi.write(puls,1)
     sleep(delay)
 
-    pi.write(en,1)
+    pi.write(en,1)                          # Disable stepper driver after move
     
-# Calculate frequency for desired speed
+# Function calculates frequency for PWM movcment
 def calculatePWM( speed ):
     if speed > maxSpeed:
         x = maxSpeed/LDPR*SPR           # Calculate frequency for max speed
@@ -77,12 +72,12 @@ def sendPWM( dirs, speed ):
     x = 0                               # To be used in ramping
     freq = round(calculatePWM(speed))   # Function to compute required frequency for speed
     print(freq)
-    if (dirs == 1 and pi.read(topEndStop) == 0 and speed !=0):
+    if (dirs == 1 and pi.read(topEndStop) == 0 and speed !=0):              # Top endstop check
         print('Error: Top ensdtop triggered, cannot move up.')
-    elif (dirs == 0 and pi.read(botEndStop) == 0 and speed !=0):
+    elif (dirs == 0 and pi.read(botEndStop) == 0 and speed !=0):            # Bottom endstop check
         print('Error: Bottom endstop triggered, cannot move down.')
     else:
-        while(x <= freq):                   # Ramp toward target speed
+        while(x <= freq):                   # Loop to ramp toward target speed
             pi.hardware_PWM(puls,x,500000)  # Set frequency to x
             sleep(0.001)                    # Slight delay
             x = x + 250                     # Increment x to target frequency for speed
@@ -93,16 +88,31 @@ def resetArm():
     pi.write(en,0)                      # Enable driver
     sendPWM(0,maxSpeed)                 # Move arm down at max speed
     while(pi.read(botEndStop) == 1):    # Check for endstop
-        time.sleep(0.01)                # Wait for Botom endstop to be pressed
+        time.sleep(0.01)                # Wait for botom endstop to be pressed
         print('moving')
     sendPWM( 0, 0)                      # Kill PWM signal once botEndStop pressed
 
-if __name__ == "__main__":
-    
-    sendPWM(0,0.0)
+def stop(gpio, level, tick):            # Callback function for endstops
+    sendPWM(0,0)
 
-    sleep(2)
-    sendPWM(1,0)
+top = pi.callback(topEndStop,0,stop)    # Trigger stop function on falling edge of top endstop GPIO
+cb1 = pi.callback(botEndStop,0,stop)    # Trigger stop function on falling edge of top endstop GPIO
+
+
+if __name__ == "__main__":
+    while(1)
+        print('Moving up...')
+        sendPWM(1,0.05)                 # Move up for 2 seconds
+        sleep(2)
+        sendPWM(0,0)                    # Stop
+        print('Pause...')
+        sleep(0.5)                      # Short pause
+        print('Moving down...')
+        sendPWM(0, 0.05)
+        sleep(2)
+        sendPWM(0, 0)
+        print('Pause...')
+        sleep(0.5)
     
     
 
