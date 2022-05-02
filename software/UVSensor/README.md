@@ -1,6 +1,6 @@
 # CAST Software - UV Sensor
 
-This contains all the software used on our Capstone Team's UV Sensor. When the UV lights reaches a certain threshold on the sensor, the Ardiuno will flash a green light. In the scenario where the UV lights has not reached the threshold, the Ardiuno will flash red.
+This contains all the software used on our Capstone Team's UV Sensor. When the UV lights reaches a certain threshold on the sensor, the Ardiuno will flash a green light. In the scenario where the UV lights has not reached the threshold, the RGB will stay red.
 
 ## Data to Support values used in Code
 
