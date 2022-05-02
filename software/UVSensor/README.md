@@ -23,3 +23,6 @@ The following file shows the UV sensor data from a panel of 5 UV-C LEDs in the 2
 
 [UV.Sensor.Test.Values.docx](https://github.com/CAST2022/CAST/files/8485109/UV.Sensor.Test.Values.docx)
 
+
+## Code Information
+You can plug in the BKI into your serial port and the code will print the UV intensity to your terminal. 
