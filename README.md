@@ -6,7 +6,7 @@ This repository contains software (C++ & Python) and hardware design files for t
 
 
 ### Visit the [CAST Google Drive](https://drive.google.com/drive/folders/1zKrm8BXflb28vrKOYb7QlBGXoKk1sI_n?usp=sharing)
-
+![CAST Robot](https://github.com/kennethgrau/CAST_BACKUP/blob/main/docs/photos%26videos/index_files/Picture1.png)
 
 ## Executive Summary
 Our covid sanitization robot will bridge the gap between the need for clean surfaces and the lack of workforce brought about by different circumstances. Our robot will utilize a gamepad controller to move and Lidar as an early warning system of moving obstacles. To sanitize surfaces, we have a robotic arm equipped with UV lights that kill bacteria upon exposure and three time of flight sensors that will take in proximity data and maintain a safe distance between the arm and the surface to be cleaned. 
