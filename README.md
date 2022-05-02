@@ -6,6 +6,7 @@ This repository contains software (C++ & Python) and hardware design files for t
 
 
 ### Visit the [CAST Google Drive](https://drive.google.com/drive/folders/1zKrm8BXflb28vrKOYb7QlBGXoKk1sI_n?usp=sharing)
+## Cast Robot:
 ![CAST Robot](https://github.com/kennethgrau/CAST_BACKUP/blob/main/docs/photos%26videos/index_files/Picture1.png)
 
 ## Executive Summary
