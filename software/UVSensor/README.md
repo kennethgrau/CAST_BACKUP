@@ -11,6 +11,8 @@ Below shows two different documentations that provide the evidence for data used
 The document above states "Based on our results, a smaller dose of UV-C (10.25–23.71 mJ/cm2) is enough to reduce the viral titer of >99.99%." Meaning 23.71 mJ/cm2 would cover every type of surface covid may appear on.
 If a user knows the specific type of surface the sensor will be placed on, the value can be changed to reflect that type of surface.
 
+Simply change **UVDoseRequirement** value to reflect the type of surface you plan on putting the sensor on.
+
 https://cdn-shop.adafruit.com/datasheets/1918guva.pdf
 
 The specifications sheet above shows the conversions needed to get the input converted to UV intensity.
